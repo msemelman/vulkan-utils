@@ -298,6 +298,10 @@ class VulkanSDKManager:
         # Get SDK info
         sdk_info = self.get_sdk_info(version, target_platform)
         
+        # Check for existing installation
+        if self._is_existing_installation(install_path / sdk_info.version):
+            self._handle_existing_installation(install_path / sdk_info.version)
+        
         # Create temporary download directory
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
@@ -309,17 +313,18 @@ class VulkanSDKManager:
             # For other platforms, extract directly to install path
             if target_platform == "mac":
                 extracted_path = self.extract_sdk(downloaded_file, temp_path / "extracted")
-                return self._install_mac_sdk(extracted_path, install_path)
             else:
                 extracted_path = self.extract_sdk(downloaded_file, install_path)
                 
-                # Install SDK
-                if target_platform == "linux":
-                    return self._install_linux_sdk(extracted_path, install_path)
-                elif target_platform == "windows":
-                    return self._install_windows_sdk(downloaded_file, install_path)
-                else:
-                    raise ValueError(f"Unsupported target platform: {target_platform}")
+            # Install SDK
+            if target_platform == "mac":
+                return self._install_mac_sdk(extracted_path, install_path)
+            elif target_platform == "linux":
+                return self._install_linux_sdk(extracted_path, install_path)
+            elif target_platform == "windows":
+                return self._install_windows_sdk(downloaded_file, install_path)
+            else:
+                raise ValueError(f"Unsupported target platform: {target_platform}")
     
     def _find_installer_app(self, extract_path: Path) -> Path | None:
         """
@@ -385,125 +390,80 @@ class VulkanSDKManager:
         version = self._get_version_from_installer(installer_exe)
         version_path = install_path / version
         
-        try:
-            # Step 1: Run the installer with proper flags
-            cmd = [
-                str(installer_exe),
-                "--al",  # Accept license
-                "--am",  # Accept EULA
-                "-c",    # Command line mode
-                "-t", str(version_path),  # Target directory
-                "install"
-            ]
+        # Step 1: Run the installer with proper flags
+        cmd = [
+            str(installer_exe),
+            "--al",  # Accept license
+            "--am",  # Accept EULA
+            "-c",    # Command line mode
+            "-t", str(version_path),  # Target directory
+            "install"
+        ]
+        
+        print(f"Running installer command: {' '.join(cmd)}")
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        # Check if the process completed successfully
+        if result.returncode == 0:
+            print("Installer process completed successfully!")
+            if result.stdout:
+                print(f"stdout: {result.stdout}")
+        else:
+            print(f"Installer process failed with return code {result.returncode}")
+            if result.stderr:
+                print(f"stderr: {result.stderr}")
+            if result.stdout:
+                print(f"stdout: {result.stdout}")
+            raise RuntimeError(f"Installer failed with return code {result.returncode}: {result.stderr}")
+        
+        print("SDK extraction completed successfully!")
+        
+        # Step 2: Run the Python installation script to make SDK available system-wide
+        install_script = version_path / "install_vulkan.py"
+        if install_script.exists():
+            print("Running install_vulkan.py to make SDK available system-wide...")
+            print("Note: This requires sudo privileges for system-wide installation")
             
-            print(f"Running installer command: {' '.join(cmd)}")
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            
-            print("SDK extraction completed successfully!")
-            
-            # Step 2: Run the Python installation script to make SDK available system-wide
-            install_script = version_path / "install_vulkan.py"
-            if install_script.exists():
-                print("Running install_vulkan.py to make SDK available system-wide...")
-                print("Note: This requires sudo privileges for system-wide installation")
+            try:
+                python_cmd = [
+                    "sudo", "python3", str(install_script), "--force-install"
+                ]
                 
-                try:
-                    python_cmd = [
-                        "sudo", "python3", str(install_script), "--force-install"
-                    ]
-                    
-                    print(f"Running: {' '.join(python_cmd)}")
-                    
-                    result = subprocess.run(
-                        python_cmd,
-                        check=True,
-                        text=True,
-                        cwd=str(version_path)
-                    )
-                    
-                    print("System-wide installation completed successfully!")
-                    
-                except subprocess.CalledProcessError as e:
-                    print(f"Warning: System-wide installation failed: {e}")
-                    print("SDK is installed locally but may not be available system-wide")
-                    print("You may need to set environment variables manually:")
-                    print(f"export VULKAN_SDK={version_path}")
-                    print(f"export PATH=$VULKAN_SDK/bin:$PATH")
-                    print(f"export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib:$DYLD_LIBRARY_PATH")
-                    print(f"export VK_LAYER_PATH=$VULKAN_SDK/share/vulkan/explicit_layer.d")
-                except KeyboardInterrupt:
-                    print("Installation cancelled by user")
-                    print("SDK is installed locally but not available system-wide")
-            else:
-                print(f"Warning: install_vulkan.py not found at {install_script}")
-                print("SDK installed locally but may not be available system-wide")
+                print(f"Running: {' '.join(python_cmd)}")
+                
+                result = subprocess.run(
+                    python_cmd,
+                    check=True,
+                    text=True,
+                    cwd=str(version_path)
+                )
+                
+                print("System-wide installation completed successfully!")
+                
+            except subprocess.CalledProcessError as e:
+                print(f"Warning: System-wide installation failed: {e}")
+                print("SDK is installed locally but may not be available system-wide")
                 print("You may need to set environment variables manually:")
+                print(f"export VULKAN_SDK={version_path}")
+                print(f"export PATH=$VULKAN_SDK/bin:$PATH")
+                print(f"export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib:$DYLD_LIBRARY_PATH")
+                print(f"export VK_LAYER_PATH=$VULKAN_SDK/share/vulkan/explicit_layer.d")
+            except KeyboardInterrupt:
+                print("Installation cancelled by user")
+                print("SDK is installed locally but not available system-wide")
+        else:
+            print(f"Warning: install_vulkan.py not found at {install_script}")
+            print("SDK installed locally but may not be available system-wide")
+            print("You may need to set environment variables manually:")
             
-            return version_path
+        return version_path
             
-        except subprocess.CalledProcessError as e:
-            print(f"Installer failed with return code {e.returncode}")
-            print(f"stdout: {e.stdout}")
-            print(f"stderr: {e.stderr}")
-            
-            # Fallback: try to copy files manually
-            print("Attempting manual installation...")
-            return self._manual_install_mac(extract_path, install_path)
-
-    def _manual_install_mac(self, extract_path: Path, install_path: Path) -> Path:
-        """
-        Manually install macOS SDK by copying files.
         
-        Parameters
-        ----------
-        extract_path : Path
-            Directory containing extracted SDK
-        install_path : Path
-            Target installation directory
-            
-        Returns
-        -------
-        Path
-            Path to the installed SDK
-        """
-        print("Performing manual installation...")
-        
-        # Look for InstallationPayload or similar directory structure
-        payload_dirs = list(extract_path.rglob("*Payload*"))
-        if payload_dirs:
-            payload_dir = payload_dirs[0]
-            print(f"Found payload directory: {payload_dir}")
-            
-            # Copy payload contents to install path
-            for item in payload_dir.iterdir():
-                dest = install_path / item.name
-                if item.is_dir():
-                    shutil.copytree(item, dest, dirs_exist_ok=True)
-                else:
-                    dest.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(item, dest)
-            
-            return install_path
-        
-        # If no payload found, copy everything
-        for item in extract_path.iterdir():
-            if item.name.endswith('.app'):
-                continue  # Skip the installer app
-            
-            dest = install_path / item.name
-            if item.is_dir():
-                shutil.copytree(item, dest, dirs_exist_ok=True)
-            else:
-                dest.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(item, dest)
-        
-        return install_path
-
     def _install_linux_sdk(self, extract_path: Path, install_path: Path) -> Path:
         """
         Install Vulkan SDK on Linux.
@@ -619,3 +579,181 @@ class VulkanSDKManager:
         
         # Fallback to getting latest version
         return self.get_latest_version("mac")
+    
+    def _is_existing_installation(self, version_path: Path) -> bool:
+        """
+        Check if the version path contains an existing Vulkan SDK installation.
+        
+        Parameters
+        ----------
+        version_path : Path
+            Path to check for existing installation
+            
+        Returns
+        -------
+        bool
+            True if an existing installation is detected, False otherwise
+        """
+        if not version_path.exists():
+            return False
+            
+        # Check for common SDK directory structure
+        sdk_indicators = [
+            "bin",
+            "lib", 
+            "include/vulkan",
+            "share/vulkan",
+            "install_vulkan.py",
+            "uninstall.sh",
+            "setup-env.sh"
+        ]
+        
+        # If at least 2 indicators are present, consider it an installation
+        found_indicators = sum(1 for indicator in sdk_indicators 
+                               if (version_path / indicator).exists())
+        
+        return found_indicators >= 2
+    
+    def _get_user_confirmation(self, message: str) -> bool:
+        """
+        Get user confirmation for an action.
+        
+        Parameters
+        ----------
+        message : str
+            Message to display to the user
+            
+        Returns
+        -------
+        bool
+            True if user confirms, False otherwise
+        """
+        while True:
+            response = input(f"{message} (y/N): ").lower().strip()
+            if response in ('y', 'yes'):
+                return True
+            elif response in ('n', 'no', ''):
+                return False
+            else:
+                print("Please enter 'y' for yes or 'n' for no.")
+    
+    def _run_uninstall_script(self, version_path: Path) -> bool:
+        """
+        Run the uninstall.sh script if it exists in the version path.
+        
+        Parameters
+        ----------
+        version_path : Path
+            Path containing the SDK installation
+            
+        Returns
+        -------
+        bool
+            True if uninstall was successful or no script found, False if failed
+        """
+        uninstall_script = version_path / "uninstall.sh"
+        
+        if not uninstall_script.exists():
+            print(f"No uninstall.sh script found at {uninstall_script}")
+            return True  # Consider successful if no script exists
+    
+                
+        print(f"Running uninstall script: {uninstall_script}")
+        
+        try:
+            # Make script executable
+            subprocess.run(y
+                ["chmod", "+x", str(uninstall_script)],
+                check=True,
+                capture_output=True
+            )
+            
+            # Run the uninstall script
+            result = subprocess.run(
+                ["sudo", str(uninstall_script)],
+                cwd=str(version_path),
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            
+            print("Uninstall script completed successfully!")
+            print(f"Output: {result.stdout}")
+            return True
+            
+        except subprocess.CalledProcessError as e:
+            print(f"Uninstall script failed with return code {e.returncode}")
+            print(f"stdout: {e.stdout}")
+            print(f"stderr: {e.stderr}")
+            return False
+        except Exception as e:
+            print(f"Error running uninstall script: {e}")
+            return False
+    
+    
+    def _remove_installation_directory(self, version_path: Path) -> bool:
+        """
+        Remove the installation directory and its contents.
+        
+        Parameters
+        ----------
+        version_path : Path
+            Path to the installation directory to remove
+            
+        Returns
+        -------
+        bool
+            True if removal was successful, False otherwise
+        """
+        try:
+            if version_path.exists():
+                print(f"Removing installation directory: {version_path}")
+                shutil.rmtree(version_path)
+                print("Installation directory removed successfully!")
+            return True
+        except Exception as e:
+            print(f"Error removing installation directory: {e}")
+            return False
+    
+    def _handle_existing_installation(self, version_path: Path) -> bool:
+        """
+        Handle existing installation by prompting user and running uninstall if confirmed.
+        
+        Parameters
+        ----------
+        version_path : Path
+            Path to the existing installation
+            
+        Returns
+        -------
+        bool
+            True if existing installation was handled successfully, False otherwise
+        """
+        print(f"Existing Vulkan SDK installation detected at: {version_path}")
+        
+        # Ask user for confirmation
+        confirm_message = (
+            "An existing installation was found. Do you want to uninstall it "
+            "and proceed with the new installation?"
+        )
+        
+        if not self._get_user_confirmation(confirm_message):
+            print("Installation cancelled by user.")
+            return False
+        
+        # Try to run uninstall script first
+        uninstall_success = self._run_uninstall_script(version_path)
+        
+        if not uninstall_success:
+            # If uninstall script failed, ask if user wants to force removal
+            force_message = (
+                "Uninstall script failed. Do you want to forcefully remove "
+                "the installation directory?"
+            )
+            
+            if not self._get_user_confirmation(force_message):
+                print("Installation cancelled by user.")
+                return False
+        
+        # Remove the installation directory
+        return self._remove_installation_directory(version_path)
