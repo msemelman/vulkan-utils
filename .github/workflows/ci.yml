@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.10', '3.11', '3.12']
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        uv sync --dev
+    
+    - name: Run linting and formatting checks
+      run: |
+        # Run ruff linter
+        uv run ruff check vulkan_utils/ tests/
+        
+        # Run type checking with mypy
+        uv run mypy vulkan_utils/
+    
+    - name: Run tests with coverage
+      run: |
+        uv run pytest -v --cov=vulkan_utils --cov-report=term-missing --cov-report=xml
+    
+    - name: Test CLI commands
+      run: |
+        uv run python -m vulkan_utils.cli --help
+        uv run vulkan-utils --help
+    
+    - name: Check package can be built
+      run: |
+        uv build
+    
+    - name: Test package installation
+      run: |
+        uv run pip install dist/*.whl
+        python -c "import vulkan_utils; print(f'Version: {vulkan_utils.__version__}')"
