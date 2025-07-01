@@ -2,7 +2,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.5-orange.svg)](https://github.com/msemelman/vulkan_utils)
+[![Version](https://img.shields.io/badge/version-0.1.6-orange.svg)](https://github.com/msemelman/vulkan_utils)
 
 A simple yet powerful command-line utility for managing Vulkan SDK operations. This tool simplifies downloading, installing, and managing Vulkan SDK versions across different platforms.
 
@@ -15,6 +15,7 @@ A simple yet powerful command-line utility for managing Vulkan SDK operations. T
 - **SHA verification**: Built-in integrity checking for downloaded files
 - **Progress tracking**: Real-time download progress indicators
 - **Smart installation**: Platform-specific installation with helpful setup instructions
+- **Installation management**: Detects existing installations and provides upgrade options
 
 ## 📦 Installation
 
@@ -45,7 +46,7 @@ pip install vulkan_utils
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/vulkan_utils.git
+git clone https://github.com/msemelman/vulkan_utils.git
 cd vulkan_utils
 
 # Install in development mode
@@ -94,7 +95,7 @@ uvx vulkan_utils install-sdk --version 1.3.224.0
 vulkan-utils install-sdk --platform linux
 
 # Install to a custom directory
-vulkan-utils install-sdk --install-path /opt/vulkan-sdk
+vulkan-utils install-sdk --install-path /opt/VulkanSDK
 
 # Download only (don't install)
 vulkan-utils install-sdk --download-only --install-path ./downloads
@@ -129,7 +130,7 @@ Downloads and installs the Vulkan SDK.
 **Options:**
 - `--version`: SDK version to download (default: "latest")
 - `--platform`: Target platform - `linux`, `mac`, `windows`, or `auto` (default: "auto")
-- `--install-path`: Installation directory (default: `~/vulkan-sdk`)
+- `--install-path`: Installation directory (default: `~/VulkanSDK`)
 - `--download-only`: Only download, don't extract/install
 
 **Examples:**
@@ -188,7 +189,7 @@ vulkan-utils sdk-info --version 1.3.224.0
 After installation, you may need to set environment variables if system-wide installation fails:
 
 ```bash
-export VULKAN_SDK=~/vulkan-sdk
+export VULKAN_SDK=~/VulkanSDK
 export PATH=$VULKAN_SDK/bin:$PATH
 export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib:$DYLD_LIBRARY_PATH
 export VK_LAYER_PATH=$VULKAN_SDK/share/vulkan/explicit_layer.d
@@ -201,7 +202,7 @@ Add these to your `~/.zshrc` or `~/.bash_profile` for persistence.
 Set the following environment variables:
 
 ```bash
-export VULKAN_SDK=~/vulkan-sdk
+export VULKAN_SDK=~/VulkanSDK
 export PATH=$VULKAN_SDK/bin:$PATH
 export LD_LIBRARY_PATH=$VULKAN_SDK/lib:$LD_LIBRARY_PATH
 export VK_LAYER_PATH=$VULKAN_SDK/share/vulkan/explicit_layer.d
@@ -260,7 +261,7 @@ uvx vulkan_utils install-sdk --version 1.3.250.1 --platform mac --download-only 
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/vulkan_utils.git
+git clone https://github.com/msemelman/vulkan_utils.git
 cd vulkan_utils
 
 # Install dependencies with uv
@@ -310,7 +311,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 If you encounter any issues or have questions:
 
-1. Check the [Issues](https://github.com/your-username/vulkan_utils/issues) page
+1. Check the [Issues](https://github.com/msemelman/vulkan_utils/issues) page
 2. Create a new issue with detailed information about your problem
 3. Include your platform, Python version, and error messages
 

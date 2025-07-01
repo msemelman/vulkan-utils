@@ -1,5 +1,6 @@
 """Vulkan SDK download and installation utilities."""
 
+import os
 import platform
 import tempfile
 import zipfile
@@ -293,14 +294,14 @@ class VulkanSDKManager:
             target_platform = self.get_current_platform()
             
         if install_path is None:
-            install_path = Path.home() / "vulkan-sdk"
+            install_path = Path.home() / "VulkanSDK"
             
         # Get SDK info
         sdk_info = self.get_sdk_info(version, target_platform)
         
         # Check for existing installation
-        if self._is_existing_installation(install_path / sdk_info.version):
-            self._handle_existing_installation(install_path / sdk_info.version)
+        if self._is_existing_installation(install_path):
+            self._handle_existing_installation(install_path)
         
         # Create temporary download directory
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -383,12 +384,6 @@ class VulkanSDKManager:
         
         print(f"Found installer: {installer_exe}")
         
-        # Create the installation directory structure
-        install_path.mkdir(parents=True, exist_ok=True)
-        
-        # Get SDK version from installer executable name
-        version = self._get_version_from_installer(installer_exe)
-        version_path = install_path / version
         
         # Step 1: Run the installer with proper flags
         cmd = [
@@ -396,7 +391,7 @@ class VulkanSDKManager:
             "--al",  # Accept license
             "--am",  # Accept EULA
             "-c",    # Command line mode
-            "-t", str(version_path),  # Target directory
+            "-t", str(install_path),  # Target directory
             "install"
         ]
         
@@ -423,45 +418,25 @@ class VulkanSDKManager:
         
         print("SDK extraction completed successfully!")
         
-        # Step 2: Run the Python installation script to make SDK available system-wide
-        install_script = version_path / "install_vulkan.py"
-        if install_script.exists():
-            print("Running install_vulkan.py to make SDK available system-wide...")
-            print("Note: This requires sudo privileges for system-wide installation")
+        # Step 2: Add source of setup-env.sh to the shell profile if not already present
+        setup_env_script = install_path / "setup-env.sh"
+        if setup_env_script.exists():
+            print(f"Adding {setup_env_script} to shell profile...")
+            if os.getenv('SHELL') == '/bin/bash':
+                shell_profile = Path.home() / ".bash_profile"
+                if not shell_profile.exists():
+                    shell_profile = Path.home() / ".bashrc"
+            elif os.getenv('SHELL') == '/bin/zsh':
+                shell_profile = Path.home() / ".zshrc"
+            else:
+                raise RuntimeError("Unsupported shell. Please add the source command manually.")
             
-            try:
-                python_cmd = [
-                    "sudo", "python3", str(install_script), "--force-install"
-                ]
-                
-                print(f"Running: {' '.join(python_cmd)}")
-                
-                result = subprocess.run(
-                    python_cmd,
-                    check=True,
-                    text=True,
-                    cwd=str(version_path)
-                )
-                
-                print("System-wide installation completed successfully!")
-                
-            except subprocess.CalledProcessError as e:
-                print(f"Warning: System-wide installation failed: {e}")
-                print("SDK is installed locally but may not be available system-wide")
-                print("You may need to set environment variables manually:")
-                print(f"export VULKAN_SDK={version_path}")
-                print(f"export PATH=$VULKAN_SDK/bin:$PATH")
-                print(f"export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib:$DYLD_LIBRARY_PATH")
-                print(f"export VK_LAYER_PATH=$VULKAN_SDK/share/vulkan/explicit_layer.d")
-            except KeyboardInterrupt:
-                print("Installation cancelled by user")
-                print("SDK is installed locally but not available system-wide")
-        else:
-            print(f"Warning: install_vulkan.py not found at {install_script}")
-            print("SDK installed locally but may not be available system-wide")
-            print("You may need to set environment variables manually:")
+            if str(setup_env_script) not in shell_profile.read_text():
+                with open(shell_profile, 'a') as profile_file:
+                    profile_file.write(f'\n# Source Vulkan SDK environment\nsource {setup_env_script}\n')
+                print(f"Added source command to {shell_profile}")
             
-        return version_path
+        return install_path
             
         
     def _install_linux_sdk(self, extract_path: Path, install_path: Path) -> Path:
@@ -557,30 +532,7 @@ class VulkanSDKManager:
         except subprocess.CalledProcessError as e:
             raise RuntimeError(f"Windows installer failed: {e.stderr}")
     
-    def _get_version_from_installer(self, installer_path: Path) -> str:
-        """
-        Extract version from installer executable name.
-        
-        Parameters
-        ----------
-        installer_path : Path
-            Path to the installer executable
-            
-        Returns
-        -------
-        str
-            Extracted version string
-        """
-        # Extract version from name like "vulkansdk-macOS-1.4.313.1"
-        import re
-        version_match = re.search(r'(\d+\.\d+\.\d+\.\d+)', installer_path.name)
-        if version_match:
-            return version_match.group(1)
-        
-        # Fallback to getting latest version
-        return self.get_latest_version("mac")
-    
-    def _is_existing_installation(self, version_path: Path) -> bool:
+    def _is_existing_installation(self, install_path: Path) -> bool:
         """
         Check if the version path contains an existing Vulkan SDK installation.
         
@@ -594,7 +546,7 @@ class VulkanSDKManager:
         bool
             True if an existing installation is detected, False otherwise
         """
-        if not version_path.exists():
+        if not install_path.exists():
             return False
             
         # Check for common SDK directory structure
@@ -610,7 +562,7 @@ class VulkanSDKManager:
         
         # If at least 2 indicators are present, consider it an installation
         found_indicators = sum(1 for indicator in sdk_indicators 
-                               if (version_path / indicator).exists())
+                               if (install_path / indicator).exists())
         
         return found_indicators >= 2
     
@@ -662,7 +614,7 @@ class VulkanSDKManager:
         
         try:
             # Make script executable
-            subprocess.run(y
+            subprocess.run(
                 ["chmod", "+x", str(uninstall_script)],
                 check=True,
                 capture_output=True
@@ -691,7 +643,7 @@ class VulkanSDKManager:
             return False
     
     
-    def _remove_installation_directory(self, version_path: Path) -> bool:
+    def _remove_installation_directory(self, install_path: Path) -> bool:
         """
         Remove the installation directory and its contents.
         
@@ -706,16 +658,16 @@ class VulkanSDKManager:
             True if removal was successful, False otherwise
         """
         try:
-            if version_path.exists():
-                print(f"Removing installation directory: {version_path}")
-                shutil.rmtree(version_path)
+            if install_path.exists():
+                print(f"Removing installation directory: {install_path}")
+                shutil.rmtree(install_path)
                 print("Installation directory removed successfully!")
             return True
         except Exception as e:
             print(f"Error removing installation directory: {e}")
             return False
     
-    def _handle_existing_installation(self, version_path: Path) -> bool:
+    def _handle_existing_installation(self, install_path: Path) -> bool:
         """
         Handle existing installation by prompting user and running uninstall if confirmed.
         
@@ -729,7 +681,7 @@ class VulkanSDKManager:
         bool
             True if existing installation was handled successfully, False otherwise
         """
-        print(f"Existing Vulkan SDK installation detected at: {version_path}")
+        print(f"Existing Vulkan SDK installation detected at: {install_path}")
         
         # Ask user for confirmation
         confirm_message = (
@@ -741,19 +693,7 @@ class VulkanSDKManager:
             print("Installation cancelled by user.")
             return False
         
-        # Try to run uninstall script first
-        uninstall_success = self._run_uninstall_script(version_path)
         
-        if not uninstall_success:
-            # If uninstall script failed, ask if user wants to force removal
-            force_message = (
-                "Uninstall script failed. Do you want to forcefully remove "
-                "the installation directory?"
-            )
-            
-            if not self._get_user_confirmation(force_message):
-                print("Installation cancelled by user.")
-                return False
         
         # Remove the installation directory
-        return self._remove_installation_directory(version_path)
+        return self._remove_installation_directory(install_path)

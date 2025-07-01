@@ -38,7 +38,7 @@ def main() -> None:
 @click.option(
     "--install-path",
     type=click.Path(path_type=Path),
-    help="Installation directory (default: ~/vulkan-sdk)"
+    help="Installation directory (default: ~/VulkanSDK)"
 )
 @click.option(
     "--download-only",
@@ -83,7 +83,7 @@ def install_sdk(
         
         # Set default install path
         if install_path is None:
-            install_path = Path.home() / "vulkan-sdk"
+            install_path = Path.home() / "VulkanSDK"
         
         click.echo(f"Target platform: {target_platform}")
         click.echo(f"SDK version: {version}")
