@@ -1,0 +1,45 @@
+title: Vulkan Utils
+description: A simple yet powerful command-line utility for managing Vulkan SDK operations
+url: https://msemelman.github.io/vulkan_utils
+baseurl: /vulkan_utils
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+theme: minima
+
+# Navigation
+header_pages:
+  - index.md
+  - installation.md
+  - usage.md
+  - reference.md
+
+# Social links
+github_username: msemelman
+repository: vulkan_utils
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# GitHub Pages specific settings
+github:
+  repository_name: vulkan_utils
+  repository_url: https://github.com/msemelman/vulkan_utils
+
+# SEO
+author: Mariano Semelman
+logo: /assets/images/logo.png
+
+# Exclude files
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - vendor/
+  - .git/
+  - .github/
+  - node_modules/
