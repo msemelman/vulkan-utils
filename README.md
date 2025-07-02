@@ -5,7 +5,7 @@
 
 A simple yet powerful command-line utility for managing Vulkan SDK operations. This tool simplifies downloading, installing, and managing Vulkan SDK versions across different platforms.
 
-📖 **[View Full Documentation](https://msemelman.github.io/vulkan_utils/)**
+📖 **[View Full Documentation](https://msemelman.github.io/vulkan-utils/)**
 
 ## 🚀 Features
 
