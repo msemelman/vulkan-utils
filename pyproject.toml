@@ -17,6 +17,7 @@ vulkan-utils = "vulkan_utils.cli:main"
 homepage = "https://github.com/msemelman/vulkan-utils"
 source = "https://github.com/msemelman/vulkan-utils"
 issues = "https://github.com/msemelman/vulkan-utils/issues"
+documentation = "https://msemelman.github.io/vulkan_utils/"
 
 
 [tool.setuptools.dynamic]
