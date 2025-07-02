@@ -26,9 +26,9 @@ Run vulkan_utils directly without installing it globally:
 
 ```bash
 # Run commands directly with uvx
-uvx vulkan_utils install-sdk
-uvx vulkan_utils latest-version
-uvx vulkan_utils sdk-info
+uvx vulkan-utils install-sdk
+uvx vulkan-utils latest-version
+uvx vulkan-utils sdk-info
 ```
 
 ### Using uv (Project installation)
@@ -47,16 +47,22 @@ pip install vulkan_utils
 
 ```bash
 # Clone the repository
-git clone https://github.com/msemelman/vulkan_utils.git
+git clone https://github.com/msemelman/vulkan-utils.git vulkan_utils
 cd vulkan_utils
 
-# Install in development mode
+# Get dependencies
 uv sync
+
+# install in current env
+uv pip install -e . # make sure venv is not active
+
+# install globally
+pip install -e .
 ```
 
 ## 🛠️ Usage
 
-After installation, the `vulkan-utils` command will be available in your terminal. Alternatively, you can run commands directly with `uvx vulkan_utils` without installing.
+After installation, the `vulkan-utils` command will be available in your terminal. Alternatively, you can run commands directly with `uvx vulkan-utils` without installing.
 
 ### Basic Commands
 
@@ -64,12 +70,12 @@ After installation, the `vulkan-utils` command will be available in your termina
 # Show help
 vulkan-utils --help
 # or with uvx
-uvx vulkan_utils --help
+uvx vulkan-utils --help
 
 # Show version
 vulkan-utils --version
 # or with uvx
-uvx vulkan_utils --version
+uvx vulkan-utils --version
 ```
 
 ### Installing Vulkan SDK
@@ -81,7 +87,7 @@ uvx vulkan_utils --version
 vulkan-utils install-sdk
 
 # or run directly with uvx (no installation required)
-uvx vulkan_utils install-sdk
+uvx vulkan-utils install-sdk
 ```
 
 #### Advanced Usage
@@ -90,7 +96,7 @@ uvx vulkan_utils install-sdk
 # Install a specific version
 vulkan-utils install-sdk --version 1.3.224.0
 # or with uvx
-uvx vulkan_utils install-sdk --version 1.3.224.0
+uvx vulkan-utils install-sdk --version 1.3.224.0
 
 # Install for a specific platform
 vulkan-utils install-sdk --platform linux
@@ -108,7 +114,7 @@ vulkan-utils install-sdk --download-only --install-path ./downloads
 # Get the latest available version for your platform
 vulkan-utils latest-version
 # or with uvx
-uvx vulkan_utils latest-version
+uvx vulkan-utils latest-version
 
 # Get latest version for a specific platform
 vulkan-utils latest-version --platform windows
@@ -116,7 +122,7 @@ vulkan-utils latest-version --platform windows
 # Get detailed SDK information
 vulkan-utils sdk-info
 # or with uvx
-uvx vulkan_utils sdk-info
+uvx vulkan-utils sdk-info
 
 # Get info for a specific version
 vulkan-utils sdk-info --version 1.3.224.0 --platform mac
@@ -139,12 +145,12 @@ Downloads and installs the Vulkan SDK.
 # Basic installation
 vulkan-utils install-sdk
 # or with uvx
-uvx vulkan_utils install-sdk
+uvx vulkan-utils install-sdk
 
 # Specific version for Linux
 vulkan-utils install-sdk --version 1.3.224.0 --platform linux
 # or with uvx
-uvx vulkan_utils install-sdk --version 1.3.224.0 --platform linux
+uvx vulkan-utils install-sdk --version 1.3.224.0 --platform linux
 
 # Download to custom location without installing
 vulkan-utils install-sdk --download-only --install-path ./my-downloads
@@ -161,7 +167,7 @@ Get the latest available Vulkan SDK version.
 ```bash
 vulkan-utils latest-version
 # or with uvx
-uvx vulkan_utils latest-version
+uvx vulkan-utils latest-version
 
 vulkan-utils latest-version --platform windows
 ```
@@ -178,7 +184,7 @@ Get detailed information about a Vulkan SDK version.
 ```bash
 vulkan-utils sdk-info
 # or with uvx
-uvx vulkan_utils sdk-info
+uvx vulkan-utils sdk-info
 
 vulkan-utils sdk-info --version 1.3.224.0
 ```
@@ -221,13 +227,13 @@ Windows installations should work system-wide automatically. No additional confi
 # Check latest available version
 vulkan-utils latest-version
 # or with uvx
-uvx vulkan_utils latest-version
+uvx vulkan-utils latest-version
 # Output: Latest Vulkan SDK version for mac: 1.3.250.1
 
 # Get detailed information about the latest SDK
 vulkan-utils sdk-info
 # or with uvx
-uvx vulkan_utils sdk-info
+uvx vulkan-utils sdk-info
 # Output: 
 # SDK Version: 1.3.250.1
 # Platform: mac
@@ -238,7 +244,7 @@ uvx vulkan_utils sdk-info
 # Download and install
 vulkan-utils install-sdk
 # or with uvx
-uvx vulkan_utils install-sdk
+uvx vulkan-utils install-sdk
 # Downloads, extracts, and installs with progress indicators and platform-specific instructions
 ```
 
@@ -251,9 +257,9 @@ vulkan-utils install-sdk --version 1.3.250.1 --platform windows --download-only 
 vulkan-utils install-sdk --version 1.3.250.1 --platform mac --download-only --install-path ./offline-sdks
 
 # or with uvx (useful for CI/CD or one-time usage)
-uvx vulkan_utils install-sdk --version 1.3.250.1 --platform linux --download-only --install-path ./offline-sdks
-uvx vulkan_utils install-sdk --version 1.3.250.1 --platform windows --download-only --install-path ./offline-sdks
-uvx vulkan_utils install-sdk --version 1.3.250.1 --platform mac --download-only --install-path ./offline-sdks
+uvx vulkan-utils install-sdk --version 1.3.250.1 --platform linux --download-only --install-path ./offline-sdks
+uvx vulkan-utils install-sdk --version 1.3.250.1 --platform windows --download-only --install-path ./offline-sdks
+uvx vulkan-utils install-sdk --version 1.3.250.1 --platform mac --download-only --install-path ./offline-sdks
 ```
 
 ## 🧪 Development
@@ -262,7 +268,7 @@ uvx vulkan_utils install-sdk --version 1.3.250.1 --platform mac --download-only 
 
 ```bash
 # Clone the repository
-git clone https://github.com/msemelman/vulkan_utils.git
+git clone https://github.com/msemelman/vulkan-utils.git vulkan_utils
 cd vulkan_utils
 
 # Install dependencies with uv
@@ -312,7 +318,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 If you encounter any issues or have questions:
 
-1. Check the [Issues](https://github.com/msemelman/vulkan_utils/issues) page
+1. Check the [Issues](https://github.com/msemelman/vulkan-utils/issues) page
 2. Create a new issue with detailed information about your problem
 3. Include your platform, Python version, and error messages
 
