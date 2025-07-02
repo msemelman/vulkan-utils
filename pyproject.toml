@@ -13,6 +13,10 @@ dynamic = ["version"]
 [project.scripts]
 vulkan-utils = "vulkan_utils.cli:main"
 
+[project.urls]
+homepage = "https://github.com/msemelman/vulkan-utils"
+source = "https://github.com/msemelman/vulkan-utils"
+issues = "https://github.com/msemelman/vulkan-utils/issues"
 
 
 [tool.setuptools.dynamic]
